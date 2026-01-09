@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bầu Cua Online - Cộng Đồng Chiến Thắng</title>
+    <title>Bầu Cua Online - Thông Báo Toàn Phòng</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -23,7 +23,7 @@
         
         .betting-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .bet-card { background: #3d3d3d; padding: 10px; border-radius: 10px; text-align: center; }
-        .bet-card img { width: 45px; height: 45px; }
+        .bet-card img { width: 50px; height: 50px; }
         .bet-card input { width: 80%; margin-top: 5px; text-align: center; border: none; border-radius: 4px; padding: 5px; }
 
         .community-section { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
@@ -35,8 +35,10 @@
         .shaking { animation: shake 0.1s infinite; }
         @keyframes shake { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
         .hidden { display: none; }
-        .winner-notif { color: #4caf50; font-weight: bold; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        /* Hiệu ứng thông báo thắng toàn phòng */
+        .winner-notif { color: #4caf50; font-weight: bold; animation: pulse 1s infinite; text-align: center; display: block; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -66,12 +68,12 @@
             <div id="guest-wait-msg" class="hidden">Đang đợi chủ phòng xóc thẻ...</div>
         </div>
         
-        <p id="msg" style="text-align:center; height: 24px; margin: 15px 0;"></p>
+        <p id="msg" style="text-align:center; height: 24px; margin: 15px 0; font-weight: bold;"></p>
 
         <div class="community-section">
             <div class="box">
-                <strong style="color: var(--gold);">🏆 Vinh Danh Thắng Lớn</strong>
-                <div id="global-winner" style="margin-top: 10px;"></div>
+                <strong style="color: var(--gold);">🏆 Vinh Danh Thắng Cuộc</strong>
+                <div id="global-winner-display" style="margin-top: 10px;"></div>
             </div>
             <div class="box">
                 <strong style="color: var(--gold);">💬 Chat & Online (<span id="online-count">0</span>)</strong>
@@ -86,22 +88,22 @@
 </div>
 
 <script>
-    // 1. FIREBASE CONFIG
+    // 1. FIREBASE CONFIG (Thay thông tin của bạn vào đây)
     const firebaseConfig = {
-  apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
-  authDomain: "game-ddf58.firebaseapp.com",
-  databaseURL: "https://game-ddf58-default-rtdb.firebaseio.com",
-  projectId: "game-ddf58",
-  storageBucket: "game-ddf58.firebasestorage.app",
-  messagingSenderId: "1044515984576",
-  appId: "1:1044515984576:web:dfe285553142875849c925",
-  measurementId: "G-0Q7VVDPWRP"
-};
+        apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
+        authDomain: "game-ddf58.firebaseapp.com",
+        databaseURL: "https://game-ddf58-default-rtdb.firebaseio.com",
+        projectId: "game-ddf58",
+        storageBucket: "game-ddf58.firebasestorage.app",
+        messagingSenderId: "1044515984576",
+        appId: "1:1044515984576:web:dfe285553142875849c925"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
+    // Fix link hình ảnh linh vật ổn định hơn
     const items = [
         { id: 0, name: "Bầu", img: "https://cdn-icons-png.flaticon.com/512/2329/2329865.png" },
         { id: 1, name: "Cua", img: "https://cdn-icons-png.flaticon.com/512/1046/1046368.png" },
@@ -151,7 +153,7 @@
         document.getElementById("online-count").innerText = users.length;
     });
 
-    // Lắng nghe kết quả phòng
+    // Lắng nghe trạng thái lắc và kết quả cho mọi người
     db.ref('room').on('value', snap => {
         const data = snap.val();
         if (!data) return;
@@ -165,11 +167,16 @@
         }
     });
 
-    // Lắng nghe thông báo thắng cuộc toàn phòng
-    db.ref('room_announcements').on('value', snap => {
+    // Lắng nghe thông báo thắng cuộc vinh danh toàn phòng
+    db.ref('global_winner_notif').on('value', snap => {
         const data = snap.val();
-        if (data && Date.now() - data.time < 10000) {
-            document.getElementById("global-winner").innerHTML = `<div class="winner-notif">🌟 ${data.userName} vừa thắng +${data.winAmount.toLocaleString()} xu!</div>`;
+        if (data && Date.now() - data.time < 8000) {
+            const display = document.getElementById("global-winner-display");
+            display.innerHTML = `<span class="winner-notif">🌟 ${data.name} thắng +${data.amount.toLocaleString()} xu!</span>`;
+            // Cập nhật cả thanh trạng thái chính
+            if (data.name !== currentUser.displayName) {
+                document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 ${data.name} vừa thắng lớn!</span>`;
+            }
         }
     });
 
@@ -186,37 +193,4 @@
         db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
             const res = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
-            db.ref('room').set({ dice: res, status: "ready", time: Date.now() });
-        }, 1500);
-    }
-
-    function checkWin(results) {
-        let win = 0;
-        results.forEach(id => { if(myBets[id] > 0) win += myBets[id] * 2; });
-        if (win > 0) {
-            balance += win;
-            db.ref('users/' + currentUser.uid).update({ balance: balance });
-            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎉 Bạn thắng +${win}!</span>`;
-            // Gửi thông báo cho cả phòng
-            db.ref('room_announcements').set({ userName: currentUser.displayName, winAmount: win, time: Date.now() });
-        } else if (myBets.some(b => b > 0)) {
-            document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Tiếc quá!</span>`;
-        }
-        myBets = [0,0,0,0,0,0];
-        for(let i=0; i<6; i++) document.getElementById(`bet-${i}`).value = 0;
-    }
-
-    function sendChat() {
-        const val = document.getElementById("chat-input").value;
-        if (val) { db.ref('chats').push({ name: currentUser.displayName, text: val }); document.getElementById("chat-input").value = ""; }
-    }
-
-    db.ref('chats').limitToLast(10).on('value', snap => {
-        const box = document.getElementById("chat-messages");
-        box.innerHTML = "";
-        snap.forEach(c => { box.innerHTML += `<div><strong>${c.val().name}:</strong> ${c.val().text}</div>`; });
-        box.scrollTop = box.scrollHeight;
-    });
-</script>
-</body>
-</html>
+            db.ref('room').set({ dice: res, status: "ready",
