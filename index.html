@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bầu Cua Online - Đồng Bộ Khách & Host</title>
+    <title>Bầu Cua Online - Hệ Thống Đồng Bộ Điểm</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -14,38 +14,25 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 10px; margin: 0; }
         .game-container { width: 100%; max-width: 600px; background: var(--dark-card); padding: 15px; border-radius: 20px; border: 2px solid var(--gold); }
         
-        /* Header */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 10px; }
         #balance-display { color: var(--gold); font-weight: bold; font-size: 20px; }
         button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
 
-        /* Bảng vinh danh cho khách và host */
-        #global-winner-display { min-height: 60px; margin-bottom: 10px; }
-        .global-announce {
-            background: rgba(255, 193, 7, 0.15);
-            border: 2px solid var(--gold);
-            color: var(--gold);
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
-            animation: slideDown 0.4s ease-out;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Dice & Table */
         .dice-board { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; background: #444; padding: 15px; border-radius: 15px; }
         .dice-board img { width: 75px; height: 75px; background: white; border-radius: 10px; }
+        
         .betting-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .bet-card { background: #3d3d3d; padding: 10px; border-radius: 10px; text-align: center; }
         .bet-card img { width: 50px; height: 50px; }
         .bet-card input { width: 80%; margin-top: 5px; text-align: center; border: none; border-radius: 4px; padding: 5px; }
 
+        .box { background: #333; padding: 10px; border-radius: 10px; margin-top: 15px; }
         #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 18px; margin-top: 15px; }
+        
         .shaking { animation: shake 0.1s infinite; }
         @keyframes shake { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
         .hidden { display: none; }
+        .winner-announce { color: var(--gold); font-weight: bold; text-align: center; display: block; margin: 10px 0; }
     </style>
 </head>
 <body>
@@ -82,6 +69,7 @@
 </div>
 
 <script>
+    // 1. Cấu hình Firebase của bạn
     const firebaseConfig = {
         apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
         authDomain: "game-ddf58.firebaseapp.com",
@@ -107,7 +95,7 @@
 
     let currentUser = null, balance = 0, myBets = [0,0,0,0,0,0], isHost = false;
 
-    // Khởi tạo bàn cược
+    // Khởi tạo giao diện
     const table = document.getElementById("betting-table");
     items.forEach(item => {
         table.innerHTML += `<div class="bet-card"><img src="${item.img}"><br><small>${item.name}</small><br><input type="number" id="bet-${item.id}" value="0" min="0"></div>`;
@@ -133,7 +121,7 @@
         }
     });
 
-    // Lắng nghe chủ phòng
+    // Xác định vai trò Chủ phòng
     db.ref('online_users').orderByChild('joinTime').on('value', snap => {
         let users = [];
         snap.forEach(child => { users.push({ id: child.key }); });
@@ -144,43 +132,46 @@
         }
     });
 
-    // Lắng nghe trạng thái xóc (Đồng bộ Khách & Host)
+    // XỬ LÝ ĐỒNG BỘ PHÒNG (TRỪ TIỀN VÀ CỘNG TIỀN)
     db.ref('room').on('value', snap => {
         const data = snap.val();
         if (!data) return;
         const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
+        
         if (data.status === "shaking") {
+            // Khi Host bắt đầu lắc, Khách cũng tự động trừ tiền cược
+            if (!isHost) deductBet(); 
             diceImgs.forEach(img => img.classList.add("shaking"));
             document.getElementById("msg").innerText = "Chủ phòng đang xóc...";
         } else if (data.status === "ready") {
-            diceImgs.forEach((img, i) => { img.classList.remove("shaking"); img.src = items[data.dice[i]].img; });
+            diceImgs.forEach((img, i) => { 
+                img.classList.remove("shaking"); 
+                img.src = items[data.dice[i]].img; 
+            });
             checkWin(data.dice);
         }
     });
 
-    // Lắng nghe vinh danh toàn phòng
-    db.ref('global_winner_notif').on('value', snap => {
-        const data = snap.val();
-        if (data && Date.now() - data.time < 8000) {
-            document.getElementById("global-winner-display").innerHTML = `
-                <div class="global-announce">⭐ Chúc mừng ${data.name} thắng lớn +${data.amount.toLocaleString()} xu! ⭐</div>
-            `;
-            if (data.name !== currentUser.displayName) document.getElementById("msg").innerText = `${data.name} vừa thắng!`;
-        } else {
-            document.getElementById("global-winner-display").innerHTML = "";
+    // Hàm trừ tiền cược (Dùng chung cho cả Host và Khách)
+    function deductBet() {
+        let total = 0;
+        for(let i=0; i<6; i++) {
+            let val = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+            myBets[i] = val;
+            total += val;
         }
-    });
+        if (total > 0 && total <= balance) {
+            balance -= total;
+            db.ref('users/' + currentUser.uid).update({ balance: balance });
+        } else if (total > balance) {
+            alert("Không đủ tiền cược!");
+            myBets = [0,0,0,0,0,0];
+        }
+    }
 
     function playGame() {
         if (!isHost) return;
-        let total = 0;
-        for(let i=0; i<6; i++) {
-            myBets[i] = parseInt(document.getElementById(`bet-${i}`).value) || 0;
-            total += myBets[i];
-        }
-        if (total > balance) return alert("Không đủ tiền!");
-        if (total > 0) { balance -= total; db.ref('users/' + currentUser.uid).update({ balance: balance }); }
-
+        deductBet(); // Host tự trừ tiền của mình trước
         db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
             const res = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
@@ -189,20 +180,34 @@
     }
 
     function checkWin(results) {
-        let winAmount = 0;
-        results.forEach(id => { if(myBets[id] > 0) winAmount += myBets[id] * 2; });
+        let win = 0;
+        results.forEach(id => { if(myBets[id] > 0) win += myBets[id] * 2; });
         
-        if (winAmount > 0) {
-            balance += winAmount;
+        if (win > 0) {
+            balance += win;
             db.ref('users/' + currentUser.uid).update({ balance: balance });
-            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${winAmount.toLocaleString()}!</span>`;
-            db.ref('global_winner_notif').set({ name: currentUser.displayName, amount: winAmount, time: Date.now() });
+            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${win.toLocaleString()}!</span>`;
+            // Thông báo vinh danh
+            db.ref('global_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
         } else if (myBets.some(b => b > 0)) {
             document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Bạn không trúng rồi!</span>`;
         }
+        // Quan trọng: Reset mảng cược sau mỗi ván
         myBets = [0,0,0,0,0,0];
         for(let i=0; i<6; i++) document.getElementById(`bet-${i}`).value = 0;
     }
+
+    // Lắng nghe vinh danh toàn phòng
+    db.ref('global_notif').on('value', snap => {
+        const data = snap.val();
+        if (data && Date.now() - data.time < 8000) {
+            document.getElementById("global-winner-display").innerHTML = `
+                <div class="winner-announce">⭐ Chúc mừng ${data.name} thắng lớn +${data.amount.toLocaleString()} xu! ⭐</div>
+            `;
+        } else {
+            document.getElementById("global-winner-display").innerHTML = "";
+        }
+    });
 </script>
 </body>
 </html>
