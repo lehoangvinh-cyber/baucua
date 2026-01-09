@@ -3,74 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bầu Cua Online - Cloud Saving</title>
+    <title>Bầu Cua Online - Cộng Đồng</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <style>
-        :root { --primary: #d32f2f; --gold: #ffc107; --bg: #1a1a1a; }
-        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 20px; }
-        .game-container { width: 100%; max-width: 500px; background: #2c2c2c; padding: 20px; border-radius: 20px; border: 2px solid var(--gold); text-align: center; }
+        :root { --primary: #d32f2f; --gold: #ffc107; --bg: #1a1a1a; --dark-card: #2c2c2c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 10px; margin: 0; }
+        .game-container { width: 100%; max-width: 600px; background: var(--dark-card); padding: 15px; border-radius: 20px; border: 2px solid var(--gold); }
         
-        /* Auth Section */
-        #auth-section { background: #3d3d3d; padding: 15px; border-radius: 15px; margin-bottom: 20px; }
-        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
-        .btn-login { background: white; color: black; padding: 10px 20px; }
-        .btn-logout { background: #555; color: white; padding: 5px 10px; font-size: 12px; }
+        /* Auth & Balance */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 10px; }
+        #balance-display { color: var(--gold); font-weight: bold; font-size: 20px; }
+        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; }
 
-        /* Game UI */
-        .dice-board { display: flex; justify-content: center; gap: 10px; margin: 20px 0; background: #444; padding: 15px; border-radius: 15px; }
-        .dice-slot img { width: 70px; height: 70px; background: white; border-radius: 10px; }
+        /* Board */
+        .dice-board { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; background: #444; padding: 15px; border-radius: 15px; }
+        .dice-board img { width: 70px; height: 70px; background: white; border-radius: 10px; }
         
-        .betting-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .bet-card { background: #3d3d3d; padding: 10px; border-radius: 10px; border: 1px solid transparent; }
-        .bet-card.active { border-color: var(--gold); }
+        .betting-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .bet-card { background: #3d3d3d; padding: 10px; border-radius: 10px; text-align: center; }
         .bet-card img { width: 45px; height: 45px; }
-        .bet-card input { width: 80%; margin-top: 5px; text-align: center; border-radius: 4px; border: none; padding: 3px; }
+        .bet-card input { width: 80%; margin-top: 5px; text-align: center; border: none; border-radius: 4px; padding: 5px; }
 
-        #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 18px; margin-top: 10px; }
-        #play-btn:disabled { background: #666; cursor: not-allowed; }
+        /* Players & Chat */
+        .community-section { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .box { background: #333; padding: 10px; border-radius: 10px; height: 150px; overflow-y: auto; font-size: 13px; }
+        #chat-messages { display: flex; flex-direction: column; }
+        .chat-input-group { display: flex; margin-top: 5px; }
+        .chat-input-group input { flex: 1; border-radius: 4px 0 0 4px; border: none; padding: 5px; }
+        .chat-input-group button { border-radius: 0 4px 4px 0; background: var(--gold); padding: 5px; }
 
+        #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 18px; margin-top: 15px; }
         .shaking { animation: shake 0.1s infinite; }
         @keyframes shake { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
         .hidden { display: none; }
-        #balance-display { font-size: 24px; color: var(--gold); margin: 10px 0; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="game-container">
-    <div id="auth-section">
-        <div id="login-ui">
-            <p>Đăng nhập để lưu số dư của bạn</p>
-            <button class="btn-login" onclick="login()">Đăng nhập bằng Google</button>
+    <div id="auth-ui" class="header">
+        <button onclick="login()" style="padding: 10px;">🔑 Đăng nhập Google</button>
+    </div>
+    
+    <div id="game-ui" class="hidden">
+        <div class="header">
+            <div>👋 <span id="user-name">...</span></div>
+            <div id="balance-display">💰 <span id="balance">0</span></div>
+            <button onclick="logout()" style="background:#555; color:white; padding:5px;">Thoát</button>
         </div>
-        <div id="user-ui" class="hidden">
-            <span id="user-name">Người chơi</span> 
-            <button class="btn-logout" onclick="logout()">Thoát</button>
+
+        <div class="dice-board">
+            <img id="dice-0" src="https://img.icons8.com/color/144/help.png">
+            <img id="dice-1" src="https://img.icons8.com/color/144/help.png">
+            <img id="dice-2" src="https://img.icons8.com/color/144/help.png">
+        </div>
+
+        <div class="betting-table" id="betting-table"></div>
+
+        <button onclick="playGame()" id="play-btn">XÓC THẺ (PHIÊN CHUNG)</button>
+        <p id="msg" style="text-align:center; color: var(--gold); font-weight:bold;"></p>
+
+        <div class="community-section">
+            <div class="box">
+                <strong style="color: var(--gold);">🟢 Online (<span id="online-count">0</span>)</strong>
+                <ul id="user-list" style="padding:0; list-style:none; margin-top:5px;"></ul>
+            </div>
+            <div class="box">
+                <strong style="color: var(--gold);">💬 Chat</strong>
+                <div id="chat-messages"></div>
+                <div class="chat-input-group">
+                    <input type="text" id="chat-input" placeholder="Nhập tin nhắn...">
+                    <button onclick="sendChat()">Gửi</button>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div id="balance-display">💰 <span id="balance">0</span></div>
-
-    <div class="dice-board">
-        <img id="dice-0" src="https://img.icons8.com/color/144/help.png">
-        <img id="dice-1" src="https://img.icons8.com/color/144/help.png">
-        <img id="dice-2" src="https://img.icons8.com/color/144/help.png">
-    </div>
-
-    <div class="betting-table" id="betting-table"></div>
-
-    <button onclick="playGame()" id="play-btn">XÓC THẺ</button>
-    <p id="msg" style="margin-top: 15px; font-weight: bold;"></p>
 </div>
 
 <script>
-    // 1. FIREBASE CONFIG (BẠN CẦN THAY THÔNG TIN Ở ĐÂY)
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+    // 1. THAY THÔNG TIN FIREBASE CỦA BẠN VÀO ĐÂY
+   const firebaseConfig = {
   apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
   authDomain: "game-ddf58.firebaseapp.com",
   databaseURL: "https://game-ddf58-default-rtdb.firebaseio.com",
@@ -79,26 +95,26 @@ const firebaseConfig = {
   messagingSenderId: "1044515984576",
   appId: "1:1044515984576:web:dfe285553142875849c925",
   measurementId: "G-0Q7VVDPWRP"
-};
+    };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // 2. DATA
     const items = [
         { id: 0, name: "Bầu", img: "https://random.com.vn/wp-content/uploads/2023/12/bau.png" },
-        { id: 1, name: "Cua", img: "https://img.icons8.com/color/144/crab.png" },
-        { id: 2, name: "Tôm", img: "https://img.icons8.com/color/144/prawn.png" },
-        { id: 3, name: "Cá", img: "https://img.icons8.com/color/144/fish.png" },
-        { id: 4, name: "Gà", img: "https://img.icons8.com/color/144/chicken.png" },
-        { id: 5, name: "Nai", img: "https://img.icons8.com/color/144/deer.png" }
+        { id: 1, name: "Cua", img: "https://cdn-icons-png.flaticon.com/512/1046/1046368.png" },
+        { id: 2, name: "Tôm", img: "https://cdn-icons-png.flaticon.com/512/2515/2515183.png" },
+        { id: 3, name: "Cá", img: "https://cdn-icons-png.flaticon.com/512/2271/2271313.png" },
+        { id: 4, name: "Gà", img: "https://cdn-icons-png.flaticon.com/512/2632/2632839.png" },
+        { id: 5, name: "Nai", img: "https://cdn-icons-png.flaticon.com/512/2395/2395796.png" }
     ];
 
     let currentUser = null;
     let balance = 0;
+    let myBets = [0, 0, 0, 0, 0, 0];
 
-    // Render Bàn Cược
+    // Khởi tạo bàn cược
     const table = document.getElementById("betting-table");
     items.forEach(item => {
         table.innerHTML += `
@@ -110,98 +126,107 @@ const firebaseConfig = {
         `;
     });
 
-    // 3. AUTH LOGIC
-    function login() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .then((result) => {
-            console.log("Đăng nhập thành công:", result.user.displayName);
-        })
-        .catch((error) => {
-            console.error("Lỗi đăng nhập chi tiết:", error.code, error.message);
-            // Nếu lỗi là 'auth/operation-not-allowed', bạn chưa làm Bước 1.
-            // Nếu lỗi là 'auth/unauthorized-domain', bạn chưa làm Bước 2.
-            alert("Lỗi đăng nhập: " + error.message);
-        });
-}
+    // 2. AUTH LOGIC
+    function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => alert(e.message)); }
     function logout() { auth.signOut(); location.reload(); }
 
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
-            document.getElementById("login-ui").classList.add("hidden");
-            document.getElementById("user-ui").classList.remove("hidden");
+            document.getElementById("auth-ui").classList.add("hidden");
+            document.getElementById("game-ui").classList.remove("hidden");
             document.getElementById("user-name").innerText = user.displayName;
-            
-            // Tải số dư từ Database
+
+            // Đồng bộ Online
+            const onlineRef = db.ref('online_users/' + user.uid);
+            onlineRef.set({ name: user.displayName });
+            onlineRef.onDisconnect().remove();
+
+            // Load Số dư
             db.ref('users/' + user.uid).on('value', snap => {
-                const data = snap.val();
-                balance = data ? data.balance : 1000; // Tặng 1000 nếu mới chơi
-                updateUI();
+                balance = snap.val() ? snap.val().balance : 1000;
+                document.getElementById("balance").innerText = balance.toLocaleString();
             });
         }
     });
 
-    // 4. GAME LOGIC
-    function playGame() {
-        if (!currentUser) return alert("Hãy đăng nhập trước!");
+    // 3. ĐỒNG BỘ PHÒNG CHƠI (ROOM)
+    db.ref('room').on('value', snap => {
+        const data = snap.val();
+        if (!data) return;
         
-        let bets = [];
+        const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
+        
+        if (data.status === "shaking") {
+            diceImgs.forEach(img => img.classList.add("shaking"));
+            document.getElementById("msg").innerText = "Đang lắc phiên chung...";
+        } else {
+            diceImgs.forEach((img, i) => {
+                img.classList.remove("shaking");
+                img.src = items[data.dice[i]].img;
+            });
+            if (data.status === "ready") checkWin(data.dice);
+        }
+    });
+
+    function playGame() {
         let totalBet = 0;
         for(let i=0; i<6; i++) {
-            let val = parseInt(document.getElementById(`bet-${i}`).value) || 0;
-            bets[i] = val;
-            totalBet += val;
+            myBets[i] = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+            totalBet += myBets[i];
         }
-
-        if (totalBet <= 0) return;
-        if (totalBet > balance) return alert("Không đủ xu!");
+        if (totalBet <= 0 || totalBet > balance) return alert("Cược không hợp lệ!");
 
         balance -= totalBet;
-        saveToCloud();
+        db.ref('users/' + currentUser.uid).update({ balance: balance });
 
-        const btn = document.getElementById("play-btn");
-        const msg = document.getElementById("msg");
-        const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
-
-        btn.disabled = true;
-        msg.innerText = "Đang lắc...";
-        diceImgs.forEach(img => img.classList.add("shaking"));
-
+        db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
-            let winAmount = 0;
-            let results = [];
-            
-            diceImgs.forEach(img => {
-                img.classList.remove("shaking");
-                let rand = Math.floor(Math.random() * 6);
-                img.src = items[rand].img;
-                results.push(rand);
-            });
-
-            // Tính tiền
-            results.forEach(id => {
-                if(bets[id] > 0) winAmount += bets[id] * 2; 
-            });
-
-            balance += winAmount;
-            saveToCloud();
-            msg.innerText = winAmount > 0 ? `Thắng +${winAmount} xu!` : "Rất tiếc!";
-            btn.disabled = false;
-        }, 1200);
+            const results = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
+            db.ref('room').set({ dice: results, status: "ready", roller: currentUser.displayName });
+        }, 1500);
     }
 
-    function saveToCloud() {
-        if(currentUser) {
-            db.ref('users/' + currentUser.uid).set({ balance: balance, name: currentUser.displayName });
+    function checkWin(results) {
+        let win = 0;
+        results.forEach(id => { if(myBets[id] > 0) win += myBets[id] * 2; });
+        if (win > 0) {
+            balance += win;
+            db.ref('users/' + currentUser.uid).update({ balance: balance });
+            document.getElementById("msg").innerText = `🎉 Bạn thắng +${win}!`;
+        } else if (myBets.some(b => b > 0)) {
+            document.getElementById("msg").innerText = "💔 Tiếc quá!";
         }
+        myBets = [0,0,0,0,0,0]; // Reset cược
     }
 
-    function updateUI() {
-        document.getElementById("balance").innerText = balance.toLocaleString();
+    // 4. CHAT & ONLINE LIST
+    function sendChat() {
+        const input = document.getElementById("chat-input");
+        if (!input.value) return;
+        db.ref('chats').push({ name: currentUser.displayName, text: input.value });
+        input.value = "";
     }
+
+    db.ref('chats').limitToLast(10).on('value', snap => {
+        const box = document.getElementById("chat-messages");
+        box.innerHTML = "";
+        snap.forEach(child => {
+            box.innerHTML += `<div><strong>${child.val().name}:</strong> ${child.val().text}</div>`;
+        });
+        box.scrollTop = box.scrollHeight;
+    });
+
+    db.ref('online_users').on('value', snap => {
+        const list = document.getElementById("user-list");
+        list.innerHTML = "";
+        let count = 0;
+        snap.forEach(child => {
+            list.innerHTML += `<li>${child.val().name}</li>`;
+            count++;
+        });
+        document.getElementById("online-count").innerText = count;
+    });
 </script>
 </body>
 </html>
-
-
