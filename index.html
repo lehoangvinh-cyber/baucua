@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bầu Cua Pro - Casino Online</title>
+    <style>
+        :root {
+            --primary-color: #d32f2f;
+            --gold-color: #ffc107;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background: #2c2c2c;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 2px solid var(--gold-color);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #balance-display {
+            background: #444;
+            padding: 10px 15px;
+            border-radius: 10px;
+            color: var(--gold-color);
+            font-weight: bold;
+        }
+        /* Xúc xắc */
+        .dice-board {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+            background: #3d3d3d;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        .dice-slot img {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 10px;
+            padding: 5px;
+        }
+        /* Bàn cược */
+        .betting-table {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .bet-card {
+            background: #3d3d3d;
+            padding: 10px;
+            border-radius: 10px;
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+        .bet-card:hover { border-color: var(--gold-color); }
+        .bet-card img { width: 50px; height: 50px; }
+        .bet-card input {
+            width: 80%;
+            margin-top: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+        }
+        /* Nút bấm */
+        #play-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #play-btn:disabled { background: #777; }
+        /* Hiệu ứng rung */
+        .shaking { animation: shake 0.1s infinite; }
+        @keyframes shake {
+            0% { transform: rotate(3deg); }
+            50% { transform: rotate(-3deg); }
+            100% { transform: rotate(3deg); }
+        }
+        #msg { margin-top: 15px; font-weight: bold; min-height: 24px; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="header">
+        <h2 style="color: var(--gold-color);">BẦU CUA PRO</h2>
+        <div id="balance-display">💰 <span id="balance">1000</span></div>
+    </div>
+
+    <div class="dice-board">
+        <div class="dice-slot"><img id="dice-0" src="https://img.icons8.com/color/144/help.png"></div>
+        <div class="dice-slot"><img id="dice-1" src="https://img.icons8.com/color/144/help.png"></div>
+        <div class="dice-slot"><img id="dice-2" src="https://img.icons8.com/color/144/help.png"></div>
+    </div>
+
+    <div class="betting-table" id="betting-table"></div>
+
+    <button onclick="playGame()" id="play-btn">Xóc Thẻ</button>
+    <p id="msg"></p>
+    <button onclick="resetMoney()" style="margin-top:20px; background:none; color:#999; border:none; cursor:pointer; text-decoration:underline;">Cấp lại vốn (Reset)</button>
+</div>
+
+<script>
+    // Dữ liệu linh vật
+    const items = [
+        { id: 0, name: "Bầu", img: "https://img.icons8.com/color/144/gourd.png" },
+        { id: 1, name: "Cua", img: "https://img.icons8.com/color/144/crab.png" },
+        { id: 2, name: "Tôm", img: "https://img.icons8.com/color/144/prawn.png" },
+        { id: 3, name: "Cá", img: "https://img.icons8.com/color/144/fish.png" },
+        { id: 4, name: "Gà", img: "https://img.icons8.com/color/144/chicken.png" },
+        { id: 5, name: "Nai", img: "https://img.icons8.com/color/144/deer.png" }
+    ];
+
+    // Khởi tạo số dư từ LocalStorage hoặc mặc định 1000
+    let balance = parseInt(localStorage.getItem('bauCuaBalance')) || 1000;
+    updateUI();
+
+    // Hiển thị bàn cược
+    const table = document.getElementById("betting-table");
+    items.forEach(item => {
+        table.innerHTML += `
+            <div class="bet-card">
+                <img src="${item.img}"><br>
+                <span>${item.name}</span><br>
+                <input type="number" id="bet-${item.id}" value="0" min="0" step="10">
+            </div>
+        `;
+    });
+
+    function playGame() {
+        const btn = document.getElementById("play-btn");
+        const msg = document.getElementById("msg");
+        let totalBet = 0;
+        let bets = [];
+
+        // Kiểm tra tiền cược
+        for(let i=0; i<6; i++) {
+            let val = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+            if(val < 0) { alert("Tiền cược không được âm!"); return; }
+            totalBet += val;
+            bets[i] = val;
+        }
+
+        if(totalBet === 0) { msg.innerText = "⚠️ Vui lòng đặt cược!"; return; }
+        if(totalBet > balance) { msg.innerText = "❌ Bạn không đủ tiền!"; return; }
+
+        // Trừ tiền và bắt đầu xóc
+        balance -= totalBet;
+        updateUI();
+        btn.disabled = true;
+        msg.innerText = "⚡ Đang xóc...";
+
+        const diceImgElements = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
+        diceImgElements.forEach(img => img.classList.add("shaking"));
+
+        setTimeout(() => {
+            let results = [];
+            let totalWin = 0;
+
+            diceImgElements.forEach(img => {
+                img.classList.remove("shaking");
+                let rand = Math.floor(Math.random() * 6);
+                img.src = items[rand].img;
+                results.push(rand);
+            });
+
+            // Tính tiền thắng
+            // 1. Trả lại tiền cược gốc cho mỗi lần xuất hiện của con trúng
+            // 2. Cộng thêm tiền thưởng (gốc x số lần xuất hiện)
+            results.forEach(resId => {
+                if(bets[resId] > 0) {
+                    totalWin += bets[resId]; // Trả lại gốc
+                    totalWin += bets[resId]; // Cộng tiền lãi
+                }
+            });
+
+            balance += totalWin;
+            updateUI();
+            
+            if(totalWin > 0) {
+                msg.innerHTML = `<span style="color:#4caf50">🎉 Thắng: +${totalWin} xu!</span>`;
+            } else {
+                msg.innerHTML = `<span style="color:#ff5252">💔 Tiếc quá! Mất -${totalBet} xu.</span>`;
+            }
+
+            btn.disabled = false;
+        }, 1200);
+    }
+
+    function updateUI() {
+        document.getElementById("balance").innerText = balance.toLocaleString();
+        localStorage.setItem('bauCuaBalance', balance);
+    }
+
+    function resetMoney() {
+        if(confirm("Bạn muốn reset số dư về 1,000 xu?")) {
+            balance = 1000;
+            updateUI();
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
