@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bầu Cua Online - Hệ Thống Đồng Bộ Điểm</title>
+    <title>Bầu Cua Online - Community & Chat</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -12,44 +12,60 @@
     <style>
         :root { --primary: #d32f2f; --gold: #ffc107; --bg: #1a1a1a; --dark-card: #2c2c2c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 10px; margin: 0; }
-        .game-container { width: 100%; max-width: 600px; background: var(--dark-card); padding: 15px; border-radius: 20px; border: 2px solid var(--gold); }
+        .game-container { width: 100%; max-width: 700px; background: var(--dark-card); padding: 15px; border-radius: 20px; border: 2px solid var(--gold); display: grid; grid-template-columns: 1fr 250px; gap: 15px; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 10px; }
-        #balance-display { color: var(--gold); font-weight: bold; font-size: 20px; }
-        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.3s; }
+        @media (max-width: 600px) { .game-container { grid-template-columns: 1fr; } }
 
+        .main-game { display: flex; flex-direction: column; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #333; padding: 10px; border-radius: 10px; }
+        #balance-display { color: var(--gold); font-weight: bold; font-size: 18px; }
+        
         .dice-board { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; background: #444; padding: 15px; border-radius: 15px; }
-        .dice-board img { width: 75px; height: 75px; background: white; border-radius: 10px; }
+        .dice-board img { width: 60px; height: 60px; background: white; border-radius: 10px; }
         
         .betting-table { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .bet-card { background: #3d3d3d; padding: 10px; border-radius: 10px; text-align: center; }
-        .bet-card img { width: 50px; height: 50px; }
+        .bet-card img { width: 40px; height: 40px; }
         .bet-card input { width: 80%; margin-top: 5px; text-align: center; border: none; border-radius: 4px; padding: 5px; }
 
-        .box { background: #333; padding: 10px; border-radius: 10px; margin-top: 15px; }
-        #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 18px; margin-top: 15px; }
+        /* Sidebar: Online & Chat */
+        .sidebar { display: flex; flex-direction: column; gap: 15px; }
+        .box { background: #333; padding: 10px; border-radius: 15px; border: 1px solid #444; display: flex; flex-direction: column; }
+        .box h4 { margin: 0 0 10px 0; color: var(--gold); font-size: 14px; border-bottom: 1px solid #555; padding-bottom: 5px; }
         
+        #user-list { list-style: none; padding: 0; margin: 0; max-height: 120px; overflow-y: auto; font-size: 13px; }
+        #user-list li { padding: 3px 0; color: #ccc; }
+        #user-list li::before { content: "● "; color: #4caf50; font-size: 10px; }
+
+        #chat-box { flex-grow: 1; display: flex; flex-direction: column; height: 250px; }
+        #chat-content { flex-grow: 1; overflow-y: auto; font-size: 13px; margin-bottom: 10px; padding-right: 5px; }
+        .chat-msg { margin-bottom: 8px; line-height: 1.4; }
+        .chat-msg b { color: var(--gold); }
+        .chat-input-area { display: flex; gap: 5px; }
+        .chat-input-area input { flex-grow: 1; padding: 5px; border-radius: 5px; border: none; font-size: 13px; }
+        .chat-input-area button { background: var(--gold); padding: 5px 10px; border-radius: 5px; border: none; font-weight: bold; }
+
+        #play-btn { width: 100%; padding: 12px; background: var(--primary); color: white; font-size: 16px; margin-top: 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; }
         .shaking { animation: shake 0.1s infinite; }
         @keyframes shake { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
         .hidden { display: none; }
-        .winner-announce { color: var(--gold); font-weight: bold; text-align: center; display: block; margin: 10px 0; }
     </style>
 </head>
 <body>
 
-<div class="game-container">
-    <div id="auth-ui" class="header" style="justify-content: center; padding: 40px 0;">
-        <button onclick="login()" style="padding: 15px 30px; background: white; color: black;">🔑 Đăng nhập Google</button>
-    </div>
-    
-    <div id="game-ui" class="hidden">
+<div id="auth-ui" style="text-align: center; margin-top: 50px;">
+    <button onclick="login()" style="padding: 15px 30px; font-size: 18px; cursor: pointer;">🔑 Đăng nhập Google để chơi</button>
+</div>
+
+<div id="game-ui" class="game-container hidden">
+    <div class="main-game">
         <div class="header">
             <div>👋 <span id="user-name">...</span></div>
             <div id="balance-display">💰 <span id="balance">0</span></div>
-            <button onclick="logout()" style="background:#555; color:white; padding:5px;">Thoát</button>
+            <button onclick="logout()" style="background:#555; color:white; padding:3px 8px; border:none; border-radius:4px; cursor:pointer;">Thoát</button>
         </div>
 
-        <div id="global-winner-display"></div>
+        <div id="global-winner-display" style="min-height: 40px;"></div>
 
         <div class="dice-board">
             <img id="dice-0" src="https://img.icons8.com/color/144/help.png">
@@ -61,15 +77,30 @@
 
         <div id="control-area">
             <button onclick="playGame()" id="play-btn" class="hidden">XÓC THẺ (CHỦ PHÒNG)</button>
-            <div id="guest-wait-msg" class="hidden" style="text-align:center; padding:15px; background:#444; border-radius:8px; margin-top:15px;">Đang đợi chủ phòng xóc...</div>
+            <div id="guest-wait-msg" class="hidden" style="text-align:center; padding:15px; background:#444; border-radius:8px; margin-top:15px; font-size: 14px; color: #aaa;">Đang đợi chủ phòng xóc...</div>
         </div>
-        
-        <p id="msg" style="text-align:center; height: 24px; margin: 15px 0; font-weight: bold;"></p>
+        <p id="msg" style="text-align:center; height: 20px; margin: 10px 0; font-weight: bold; font-size: 14px;"></p>
+    </div>
+
+    <div class="sidebar">
+        <div class="box">
+            <h4>🟢 Trực tuyến (<span id="online-count">0</span>)</h4>
+            <ul id="user-list"></ul>
+        </div>
+
+        <div class="box" id="chat-box">
+            <h4>💬 Trò chuyện</h4>
+            <div id="chat-content"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Nhắn tin...">
+                <button onclick="sendChat()">></button>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    // 1. Cấu hình Firebase của bạn
+    // 1. CẤU HÌNH FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
         authDomain: "game-ddf58.firebaseapp.com",
@@ -95,10 +126,10 @@
 
     let currentUser = null, balance = 0, myBets = [0,0,0,0,0,0], isHost = false;
 
-    // Khởi tạo giao diện
+    // Render Bàn Cược
     const table = document.getElementById("betting-table");
     items.forEach(item => {
-        table.innerHTML += `<div class="bet-card"><img src="${item.img}"><br><small>${item.name}</small><br><input type="number" id="bet-${item.id}" value="0" min="0"></div>`;
+        table.innerHTML += `<div class="bet-card"><img src="${item.img}"><br><small style="font-size:10px">${item.name}</small><br><input type="number" id="bet-${item.id}" value="0" min="0"></div>`;
     });
 
     function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
@@ -111,9 +142,12 @@
             document.getElementById("game-ui").classList.remove("hidden");
             document.getElementById("user-name").innerText = user.displayName;
             
-            db.ref('online_users/' + user.uid).set({ name: user.displayName, joinTime: firebase.database.ServerValue.TIMESTAMP });
-            db.ref('online_users/' + user.uid).onDisconnect().remove();
+            // Presence System
+            const onlineRef = db.ref('online_users/' + user.uid);
+            onlineRef.set({ name: user.displayName, joinTime: firebase.database.ServerValue.TIMESTAMP });
+            onlineRef.onDisconnect().remove();
 
+            // Sync Balance
             db.ref('users/' + user.uid).on('value', snap => {
                 balance = snap.val() ? snap.val().balance : 1000;
                 document.getElementById("balance").innerText = balance.toLocaleString();
@@ -121,10 +155,17 @@
         }
     });
 
-    // Xác định vai trò Chủ phòng
+    // Sidebar: Online Users
     db.ref('online_users').orderByChild('joinTime').on('value', snap => {
-        let users = [];
-        snap.forEach(child => { users.push({ id: child.key }); });
+        const list = document.getElementById("user-list");
+        list.innerHTML = "";
+        let count = 0, users = [];
+        snap.forEach(child => {
+            users.push({ id: child.key });
+            list.innerHTML += `<li>${child.val().name}</li>`;
+            count++;
+        });
+        document.getElementById("online-count").innerText = count;
         if (users.length > 0) {
             isHost = (users[0].id === currentUser.uid);
             document.getElementById("play-btn").classList.toggle("hidden", !isHost);
@@ -132,46 +173,52 @@
         }
     });
 
-    // XỬ LÝ ĐỒNG BỘ PHÒNG (TRỪ TIỀN VÀ CỘNG TIỀN)
+    // Chat Logic
+    function sendChat() {
+        const input = document.getElementById("chat-input");
+        if (!input.value.trim()) return;
+        db.ref('chats').push({ name: currentUser.displayName, text: input.value });
+        input.value = "";
+    }
+    db.ref('chats').limitToLast(20).on('value', snap => {
+        const content = document.getElementById("chat-content");
+        content.innerHTML = "";
+        snap.forEach(c => {
+            content.innerHTML += `<div class="chat-msg"><b>${c.val().name}:</b> ${c.val().text}</div>`;
+        });
+        content.scrollTop = content.scrollHeight;
+    });
+
+    // Game Logic (Sync Host & Player)
     db.ref('room').on('value', snap => {
         const data = snap.val();
         if (!data) return;
         const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
-        
         if (data.status === "shaking") {
-            // Khi Host bắt đầu lắc, Khách cũng tự động trừ tiền cược
             if (!isHost) deductBet(); 
             diceImgs.forEach(img => img.classList.add("shaking"));
             document.getElementById("msg").innerText = "Chủ phòng đang xóc...";
         } else if (data.status === "ready") {
-            diceImgs.forEach((img, i) => { 
-                img.classList.remove("shaking"); 
-                img.src = items[data.dice[i]].img; 
-            });
+            diceImgs.forEach((img, i) => { img.classList.remove("shaking"); img.src = items[data.dice[i]].img; });
             checkWin(data.dice);
         }
     });
 
-    // Hàm trừ tiền cược (Dùng chung cho cả Host và Khách)
     function deductBet() {
         let total = 0;
         for(let i=0; i<6; i++) {
-            let val = parseInt(document.getElementById(`bet-${i}`).value) || 0;
-            myBets[i] = val;
-            total += val;
+            myBets[i] = parseInt(document.getElementById(`bet-${i}`).value) || 0;
+            total += myBets[i];
         }
         if (total > 0 && total <= balance) {
             balance -= total;
             db.ref('users/' + currentUser.uid).update({ balance: balance });
-        } else if (total > balance) {
-            alert("Không đủ tiền cược!");
-            myBets = [0,0,0,0,0,0];
         }
     }
 
     function playGame() {
         if (!isHost) return;
-        deductBet(); // Host tự trừ tiền của mình trước
+        deductBet();
         db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
             const res = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
@@ -182,28 +229,23 @@
     function checkWin(results) {
         let win = 0;
         results.forEach(id => { if(myBets[id] > 0) win += myBets[id] * 2; });
-        
         if (win > 0) {
             balance += win;
             db.ref('users/' + currentUser.uid).update({ balance: balance });
-            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${win.toLocaleString()}!</span>`;
-            // Thông báo vinh danh
-            db.ref('global_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
+            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${win}!</span>`;
+            db.ref('global_winner_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
         } else if (myBets.some(b => b > 0)) {
-            document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Bạn không trúng rồi!</span>`;
+            document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Thua rồi!</span>`;
         }
-        // Quan trọng: Reset mảng cược sau mỗi ván
         myBets = [0,0,0,0,0,0];
         for(let i=0; i<6; i++) document.getElementById(`bet-${i}`).value = 0;
     }
 
-    // Lắng nghe vinh danh toàn phòng
-    db.ref('global_notif').on('value', snap => {
+    // Global Notif
+    db.ref('global_winner_notif').on('value', snap => {
         const data = snap.val();
         if (data && Date.now() - data.time < 8000) {
-            document.getElementById("global-winner-display").innerHTML = `
-                <div class="winner-announce">⭐ Chúc mừng ${data.name} thắng lớn +${data.amount.toLocaleString()} xu! ⭐</div>
-            `;
+            document.getElementById("global-winner-display").innerHTML = `<div style="color:var(--gold); text-align:center; font-weight:bold; font-size:12px">🌟 ${data.name} thắng +${data.amount.toLocaleString()} xu!</div>`;
         } else {
             document.getElementById("global-winner-display").innerHTML = "";
         }
