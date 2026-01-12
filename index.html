@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bầu Cua Online - Full Community</title>
+    <title>Bầu Cua Online - Phiên Bản Nâng Cấp</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -13,13 +13,15 @@
         :root { --primary: #d32f2f; --gold: #ffc107; --bg: #1a1a1a; --dark-card: #2c2c2c; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; display: flex; justify-content: center; }
         
-        .game-container { width: 100%; max-width: 900px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .game-container { width: 100%; max-width: 950px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
         @media (max-width: 850px) { .game-container { grid-template-columns: 1fr; } }
         
-        /* Cột trái: Game chính */
-        .main-panel { background: var(--dark-card); padding: 20px; border-radius: 20px; border: 2px solid var(--gold); }
+        .main-panel { background: var(--dark-card); padding: 20px; border-radius: 20px; border: 2px solid var(--gold); position: relative; }
         .header { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 12px; border-radius: 12px; margin-bottom: 20px; }
         
+        /* Session ID - Số phiên */
+        .session-info { position: absolute; top: 10px; left: 20px; font-size: 12px; color: #888; }
+
         .dice-board { display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; background: #444; padding: 20px; border-radius: 15px; }
         .dice-board img { width: 80px; height: 80px; background: white; border-radius: 12px; border: 2px solid #666; }
         
@@ -28,46 +30,46 @@
         .bet-card img { width: 55px; height: 55px; margin-bottom: 5px; }
         .bet-card input { width: 85%; border-radius: 5px; border: none; padding: 8px; text-align: center; font-weight: bold; }
 
-        /* Cột phải: Cộng đồng */
+        /* Sidebar & Chat */
         .side-panel { display: flex; flex-direction: column; gap: 15px; }
         .box { background: #252525; border-radius: 15px; border: 1px solid #444; overflow: hidden; display: flex; flex-direction: column; }
         .box-title { background: #333; padding: 10px 15px; font-weight: bold; color: var(--gold); font-size: 14px; border-bottom: 1px solid #444; }
         
-        /* Online List */
-        #user-list { list-style: none; padding: 10px; margin: 0; max-height: 150px; overflow-y: auto; }
-        #user-list li { padding: 6px 12px; margin-bottom: 5px; background: #333; border-radius: 6px; font-size: 13px; display: flex; align-items: center; }
-        #user-list li::before { content: "●"; color: #4caf50; margin-right: 10px; font-size: 12px; }
-        .host-item { border: 1px solid var(--gold) !important; color: var(--gold) !important; font-weight: bold; }
+        /* Tùy chỉnh thanh cuộn (Scrollbar) */
+        #chat-messages::-webkit-scrollbar, #user-list::-webkit-scrollbar { width: 6px; }
+        #chat-messages::-webkit-scrollbar-track, #user-list::-webkit-scrollbar-track { background: #1a1a1a; }
+        #chat-messages::-webkit-scrollbar-thumb, #user-list::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        #chat-messages::-webkit-scrollbar-thumb:hover, #user-list::-webkit-scrollbar-thumb:hover { background: var(--gold); }
 
-        /* Chatbox */
-        #chat-messages { flex: 1; padding: 15px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
-        .chat-msg { background: #333; padding: 8px 12px; border-radius: 10px; font-size: 14px; width: fit-content; max-width: 90%; word-wrap: break-word; }
+        #user-list { list-style: none; padding: 10px; margin: 0; max-height: 120px; overflow-y: auto; }
+        #user-list li { padding: 6px 12px; margin-bottom: 5px; background: #333; border-radius: 6px; font-size: 13px; }
+
+        #chat-messages { flex: 1; padding: 15px; height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+        .chat-msg { background: #333; padding: 8px 12px; border-radius: 10px; font-size: 13px; width: fit-content; max-width: 95%; word-wrap: break-word; }
+        .chat-time { font-size: 10px; color: #777; margin-right: 5px; font-family: monospace; }
         .chat-msg b { color: var(--gold); margin-right: 5px; }
+
         .chat-input-area { display: flex; padding: 10px; background: #1a1a1a; gap: 8px; }
         .chat-input-area input { flex: 1; background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; outline: none; }
         .chat-input-area button { background: var(--gold); color: black; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        /* Animations & Utilities */
-        #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 20px; font-weight: bold; border-radius: 12px; border: none; margin-top: 20px; cursor: pointer; box-shadow: 0 4px #8b0000; }
-        #play-btn:active { transform: translateY(2px); box-shadow: 0 2px #8b0000; }
+        #play-btn { width: 100%; padding: 15px; background: var(--primary); color: white; font-size: 20px; font-weight: bold; border-radius: 12px; border: none; margin-top: 20px; cursor: pointer; }
         .shaking { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: rotate(2deg); } 50% { transform: rotate(-2deg); } 100% { transform: rotate(2deg); } }
+        @keyframes shake { 0% { transform: rotate(2deg); } 50% { transform: rotate(-2deg); } }
         .hidden { display: none; }
-        .winner-notif { color: #4caf50; font-weight: bold; text-align: center; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .winner-notif { color: #4caf50; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
 
 <div id="auth-screen" style="margin-top: 100px; text-align: center;">
     <h1 style="color: var(--gold);">BẦU CUA ONLINE</h1>
-    <button onclick="login()" style="padding: 15px 40px; font-size: 18px; cursor: pointer; font-weight: bold; border-radius: 10px; border: none;">
-        <img src="https://img.icons8.com/color/24/google-logo.png" style="vertical-align: middle; margin-right: 10px;"> Đăng nhập bằng Google
-    </button>
+    <button onclick="login()" style="padding: 15px 40px; font-size: 18px; cursor: pointer; border-radius: 10px; border: none;">Đăng nhập Google</button>
 </div>
 
 <div id="game-ui" class="game-container hidden">
     <div class="main-panel">
+        <div class="session-info">PHIÊN: #<span id="session-id">0</span></div>
         <div class="header">
             <div>👋 <b id="user-name">...</b></div>
             <div style="color: var(--gold); font-size: 20px;">💰 <b id="balance">0</b></div>
@@ -86,21 +88,18 @@
 
         <div id="control-area">
             <button onclick="playGame()" id="play-btn" class="hidden">XÓC THẺ (HOST)</button>
-            <div id="guest-msg-area" class="hidden" style="text-align:center; padding:20px; color:#aaa; font-style: italic;">
-                Đang đợi chủ phòng xóc thẻ...
-            </div>
+            <div id="guest-msg-area" class="hidden" style="text-align:center; padding:20px; color:#aaa; font-style: italic;">Đang đợi Host...</div>
         </div>
         <p id="msg" style="text-align:center; height: 30px; margin-top: 15px; font-weight: bold; font-size: 18px;"></p>
     </div>
 
     <div class="side-panel">
         <div class="box">
-            <div class="box-title">🟢 NGƯỜI CHƠI ONLINE (<span id="online-count">0</span>)</div>
+            <div class="box-title">🟢 ONLINE (<span id="online-count">0</span>)</div>
             <ul id="user-list"></ul>
         </div>
-
         <div class="box">
-            <div class="box-title">💬 PHÒNG CHÁT</div>
+            <div class="box-title">💬 CHÁT NHÓM</div>
             <div id="chat-messages"></div>
             <div class="chat-input-area">
                 <input type="text" id="chat-input" placeholder="Nhập tin nhắn...">
@@ -111,6 +110,7 @@
 </div>
 
 <script>
+    // --- FIREBASE CONFIG (Thay bằng của bạn) ---
     const firebaseConfig = {
         apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
         authDomain: "game-ddf58.firebaseapp.com",
@@ -136,6 +136,7 @@
 
     let currentUser = null, balance = 0, myBets = [0,0,0,0,0,0], isHost = false;
 
+    // Render Table
     const table = document.getElementById("betting-table");
     items.forEach(item => {
         table.innerHTML += `<div class="bet-card"><img src="${item.img}"><br><small>${item.name}</small><br><input type="number" id="bet-${item.id}" value="0" min="0"></div>`;
@@ -151,9 +152,8 @@
             document.getElementById("game-ui").classList.remove("hidden");
             document.getElementById("user-name").innerText = user.displayName;
 
-            const onlineRef = db.ref('online_users/' + user.uid);
-            onlineRef.set({ name: user.displayName, joinTime: firebase.database.ServerValue.TIMESTAMP });
-            onlineRef.onDisconnect().remove();
+            db.ref('online_users/' + user.uid).set({ name: user.displayName, joinTime: firebase.database.ServerValue.TIMESTAMP });
+            db.ref('online_users/' + user.uid).onDisconnect().remove();
 
             db.ref('users/' + user.uid).on('value', snap => {
                 balance = snap.val() ? snap.val().balance : 1000;
@@ -162,18 +162,14 @@
         }
     });
 
+    // Hiện danh sách người chơi
     db.ref('online_users').orderByChild('joinTime').on('value', snap => {
         const list = document.getElementById("user-list");
         list.innerHTML = "";
         let count = 0, users = [];
         snap.forEach(child => {
-            const uid = child.key;
-            const uData = child.val();
-            users.push({ id: uid });
-            const li = document.createElement("li");
-            li.innerText = uData.name;
-            if (count === 0) { li.classList.add("host-item"); li.innerHTML += " (Chủ phòng)"; }
-            list.appendChild(li);
+            users.push({ id: child.key });
+            list.innerHTML += `<li>${child.val().name}${count === 0 ? ' ⭐' : ''}</li>`;
             count++;
         });
         document.getElementById("online-count").innerText = count;
@@ -184,35 +180,38 @@
         }
     });
 
+    // Chát với thời gian
     function sendChat() {
         const input = document.getElementById("chat-input");
         if (!input.value.trim() || !currentUser) return;
-        db.ref('chats').push({ name: currentUser.displayName, text: input.value });
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        db.ref('chats').push({ name: currentUser.displayName, text: input.value, time: timeStr });
         input.value = "";
     }
 
-    document.getElementById("chat-input").addEventListener("keypress", e => {
-        if (e.key === "Enter") sendChat();
-    });
+    document.getElementById("chat-input").addEventListener("keypress", e => { if (e.key === "Enter") sendChat(); });
 
-    db.ref('chats').limitToLast(20).on('value', snap => {
+    db.ref('chats').limitToLast(30).on('value', snap => {
         const box = document.getElementById("chat-messages");
         box.innerHTML = "";
         snap.forEach(c => {
-            box.innerHTML += `<div class="chat-msg"><b>${c.val().name}:</b> ${c.val().text}</div>`;
+            const data = c.val();
+            box.innerHTML += `<div class="chat-msg"><span class="chat-time">[${data.time || '..:..'}]</span><b>${data.name}:</b> ${data.text}</div>`;
         });
-        // Lệnh tự động cuộn xuống cuối
         box.scrollTop = box.scrollHeight;
     });
 
+    // Đồng bộ Game & Số phiên
     db.ref('room').on('value', snap => {
         const data = snap.val();
         if (!data) return;
+        document.getElementById("session-id").innerText = data.sessionId || 0;
         const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
         if (data.status === "shaking") {
             if (!isHost) deductBet();
             diceImgs.forEach(img => img.classList.add("shaking"));
-            document.getElementById("msg").innerText = "Chủ phòng đang xóc...";
+            document.getElementById("msg").innerText = "Đang xóc...";
         } else if (data.status === "ready") {
             diceImgs.forEach((img, i) => { img.classList.remove("shaking"); img.src = items[data.dice[i]].img; });
             checkWin(data.dice);
@@ -234,10 +233,12 @@
     function playGame() {
         if (!isHost) return;
         deductBet();
+        // Lấy số phiên cũ và tăng lên 1
+        db.ref('room/sessionId').transaction((current) => (current || 0) + 1);
         db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
             const res = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
-            db.ref('room').set({ dice: res, status: "ready", time: Date.now() });
+            db.ref('room').update({ dice: res, status: "ready" });
         }, 1500);
     }
 
@@ -247,19 +248,17 @@
         if (win > 0) {
             balance += win;
             db.ref('users/' + currentUser.uid).update({ balance: balance });
-            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${win.toLocaleString()}!</span>`;
-            db.ref('global_winner_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
-        } else if (myBets.some(b => b > 0)) {
-            document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Bạn không trúng rồi!</span>`;
+            document.getElementById("msg").innerHTML = `<span style="color:#4caf50">THẮNG +${win.toLocaleString()}!</span>`;
+            db.ref('global_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
         }
         myBets = [0,0,0,0,0,0];
         for(let i=0; i<6; i++) document.getElementById(`bet-${i}`).value = 0;
     }
 
-    db.ref('global_winner_notif').on('value', snap => {
+    db.ref('global_notif').on('value', snap => {
         const data = snap.val();
-        if (data && Date.now() - data.time < 8000) {
-            document.getElementById("global-winner-display").innerHTML = `<div class="winner-notif">⭐ ${data.name} thắng lớn +${data.amount.toLocaleString()} xu! ⭐</div>`;
+        if (data && Date.now() - data.time < 5000) {
+            document.getElementById("global-winner-display").innerHTML = `<div class="winner-notif">🌟 ${data.name} thắng +${data.amount.toLocaleString()}!</div>`;
         } else {
             document.getElementById("global-winner-display").innerHTML = "";
         }
