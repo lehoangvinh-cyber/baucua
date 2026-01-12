@@ -40,8 +40,8 @@
         .host-item { border: 1px solid var(--gold) !important; color: var(--gold) !important; font-weight: bold; }
 
         /* Chatbox */
-        #chat-messages { flex: 1; padding: 15px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .chat-msg { background: #333; padding: 8px 12px; border-radius: 10px; font-size: 14px; width: fit-content; max-width: 90%; }
+        #chat-messages { flex: 1; padding: 15px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+        .chat-msg { background: #333; padding: 8px 12px; border-radius: 10px; font-size: 14px; width: fit-content; max-width: 90%; word-wrap: break-word; }
         .chat-msg b { color: var(--gold); margin-right: 5px; }
         .chat-input-area { display: flex; padding: 10px; background: #1a1a1a; gap: 8px; }
         .chat-input-area input { flex: 1; background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; outline: none; }
@@ -111,7 +111,6 @@
 </div>
 
 <script>
-    // --- 1. CẤU HÌNH FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
         authDomain: "game-ddf58.firebaseapp.com",
@@ -137,13 +136,11 @@
 
     let currentUser = null, balance = 0, myBets = [0,0,0,0,0,0], isHost = false;
 
-    // Render Bàn cược
     const table = document.getElementById("betting-table");
     items.forEach(item => {
         table.innerHTML += `<div class="bet-card"><img src="${item.img}"><br><small>${item.name}</small><br><input type="number" id="bet-${item.id}" value="0" min="0"></div>`;
     });
 
-    // --- 2. LOGIC ĐĂNG NHẬP & ONLINE ---
     function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
     function logout() { auth.signOut(); location.reload(); }
 
@@ -165,27 +162,20 @@
         }
     });
 
-    // Lắng nghe người chơi Online & Xác định Host
     db.ref('online_users').orderByChild('joinTime').on('value', snap => {
         const list = document.getElementById("user-list");
         list.innerHTML = "";
         let count = 0, users = [];
-        
         snap.forEach(child => {
             const uid = child.key;
             const uData = child.val();
             users.push({ id: uid });
-            
             const li = document.createElement("li");
             li.innerText = uData.name;
-            if (count === 0) { 
-                li.classList.add("host-item"); 
-                li.innerHTML += " (Chủ phòng)";
-            }
+            if (count === 0) { li.classList.add("host-item"); li.innerHTML += " (Chủ phòng)"; }
             list.appendChild(li);
             count++;
         });
-        
         document.getElementById("online-count").innerText = count;
         if (users.length > 0) {
             isHost = (users[0].id === currentUser?.uid);
@@ -194,7 +184,6 @@
         }
     });
 
-    // --- 3. LOGIC CHAT (Hỗ trợ phím Enter) ---
     function sendChat() {
         const input = document.getElementById("chat-input");
         if (!input.value.trim() || !currentUser) return;
@@ -212,24 +201,20 @@
         snap.forEach(c => {
             box.innerHTML += `<div class="chat-msg"><b>${c.val().name}:</b> ${c.val().text}</div>`;
         });
+        // Lệnh tự động cuộn xuống cuối
         box.scrollTop = box.scrollHeight;
     });
 
-    // --- 4. LOGIC GAME ĐỒNG BỘ ---
     db.ref('room').on('value', snap => {
         const data = snap.val();
         if (!data) return;
         const diceImgs = [document.getElementById("dice-0"), document.getElementById("dice-1"), document.getElementById("dice-2")];
-        
         if (data.status === "shaking") {
-            if (!isHost) deductBet(); // Khách tự trừ tiền khi Host bắt đầu lắc
+            if (!isHost) deductBet();
             diceImgs.forEach(img => img.classList.add("shaking"));
             document.getElementById("msg").innerText = "Chủ phòng đang xóc...";
         } else if (data.status === "ready") {
-            diceImgs.forEach((img, i) => { 
-                img.classList.remove("shaking"); 
-                img.src = items[data.dice[i]].img; 
-            });
+            diceImgs.forEach((img, i) => { img.classList.remove("shaking"); img.src = items[data.dice[i]].img; });
             checkWin(data.dice);
         }
     });
@@ -248,7 +233,7 @@
 
     function playGame() {
         if (!isHost) return;
-        deductBet(); // Host trừ tiền của mình
+        deductBet();
         db.ref('room').update({ status: "shaking" });
         setTimeout(() => {
             const res = [Math.floor(Math.random()*6), Math.floor(Math.random()*6), Math.floor(Math.random()*6)];
@@ -263,7 +248,6 @@
             balance += win;
             db.ref('users/' + currentUser.uid).update({ balance: balance });
             document.getElementById("msg").innerHTML = `<span style="color:#4caf50">🎊 BẠN THẮNG +${win.toLocaleString()}!</span>`;
-            // Thông báo vinh danh toàn phòng
             db.ref('global_winner_notif').set({ name: currentUser.displayName, amount: win, time: Date.now() });
         } else if (myBets.some(b => b > 0)) {
             document.getElementById("msg").innerHTML = `<span style="color:#ff5252">💔 Bạn không trúng rồi!</span>`;
@@ -272,7 +256,6 @@
         for(let i=0; i<6; i++) document.getElementById(`bet-${i}`).value = 0;
     }
 
-    // Lắng nghe vinh danh toàn phòng
     db.ref('global_winner_notif').on('value', snap => {
         const data = snap.val();
         if (data && Date.now() - data.time < 8000) {
