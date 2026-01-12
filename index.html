@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siêu Ứng Dụng Game Online</title>
+    <title>Siêu Ứng Dụng Game Online v2.0</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
@@ -14,38 +14,35 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 10px; display: flex; justify-content: center; }
         
         /* Auth Styles */
-        .auth-box { background: var(--dark-card); padding: 30px; border-radius: 20px; border: 2px solid var(--gold); width: 350px; text-align: center; margin-top: 50px; }
-        .auth-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; }
-        .auth-box button { width: 100%; padding: 12px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
+        .auth-box { background: var(--dark-card); padding: 30px; border-radius: 20px; border: 2px solid var(--gold); width: 350px; text-align: center; margin-top: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .auth-box input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; outline: none; }
+        .auth-box button { width: 100%; padding: 12px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .auth-box p { font-size: 13px; color: #aaa; cursor: pointer; margin-top: 15px; text-decoration: underline; }
+
         /* Layout */
-        .game-container { width: 100%; max-width: 1100px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        .game-container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
         @media (max-width: 900px) { .game-container { grid-template-columns: 1fr; } }
         
         .main-panel { background: var(--dark-card); padding: 20px; border-radius: 20px; border: 2px solid var(--gold); min-height: 600px; position: relative; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 12px; border-radius: 12px; margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 12px; border-radius: 12px; margin-bottom: 20px; gap: 10px; }
         
         /* Game Components */
         .dice-board { display: flex; justify-content: center; gap: 15px; margin: 20px 0; background: #444; padding: 20px; border-radius: 15px; min-height: 100px; align-items: center; }
         .dice-board img { width: 65px; height: 65px; background: white; border-radius: 10px; }
-        .xd-dot { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #333; }
-        .dot-red { background: #ff5252; } .dot-white { background: #ffffff; }
-        
         .track { background: var(--green); padding: 10px; border-radius: 10px; position: relative; overflow: hidden; }
         .lane { height: 40px; border-bottom: 1px dashed rgba(255,255,255,0.2); position: relative; display: flex; align-items: center; }
         .horse { font-size: 24px; position: absolute; left: 0; transition: left 0.2s linear; }
 
-        /* Sidebar & Chat */
+        /* Sidebar & History */
         .box { background: #252525; border-radius: 15px; border: 1px solid #444; margin-bottom: 15px; overflow: hidden; }
-        #chat-messages { height: 350px; overflow-y: auto; padding: 15px; font-size: 13px; scroll-behavior: smooth; }
-        .chat-time { font-size: 10px; color: #777; margin-right: 5px; }
-        
-        /* Menu */
+        #chat-messages, #history-list { height: 250px; overflow-y: auto; padding: 15px; font-size: 13px; scroll-behavior: smooth; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #333; font-size: 11px; }
+        .history-win { color: #4caf50; } .history-lose { color: #ff5252; }
+
+        /* Utilities */
         .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 30px; }
         .menu-item { background: #333; border: 2px solid #444; border-radius: 15px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; }
         .menu-item:hover { border-color: var(--gold); transform: translateY(-3px); }
-        .menu-item img { width: 60px; height: 60px; margin-bottom: 10px; }
-
         .hidden { display: none; }
         .shaking { animation: shake 0.1s infinite; }
         @keyframes shake { 0% { transform: rotate(3deg); } 50% { transform: rotate(-3deg); } }
@@ -61,14 +58,18 @@
     <input type="email" id="auth-email" placeholder="Email">
     <input type="password" id="auth-password" placeholder="Mật khẩu">
     <button onclick="handleAuth()" id="auth-btn">Vào Game</button>
-    <p onclick="forgotPassword()" id="forgot-pw-link" style="color: #d32f2f; font-size: 12px;">Quên mật khẩu?</p>
+    <p onclick="forgotPassword()" style="color: #d32f2f; font-size: 11px;">Quên mật khẩu?</p>
     <p onclick="toggleAuthMode()" id="auth-toggle">Chưa có tài khoản? Đăng ký</p>
 </div>
 
 <div id="game-ui" class="game-container hidden">
     <div class="main-panel">
         <div class="header">
-            <div>👋 <b id="user-name">...</b> | PHIÊN: #<span id="session-id">0</span></div>
+            <div>👋 <b id="user-name">...</b></div>
+            <select id="game-mode" onchange="toggleMode()" style="background:#444; color:white; border:none; padding:5px; border-radius:5px;">
+                <option value="chung">🌐 Chơi Chung</option>
+                <option value="rieng">👤 Chơi Riêng</option>
+            </select>
             <div style="color: var(--gold); font-size: 20px;">💰 <b id="balance">0</b></div>
             <button onclick="logout()" style="background:none; color:#888; border:none; cursor:pointer;">Thoát</button>
         </div>
@@ -77,15 +78,15 @@
 
         <div id="screen-menu">
             <div class="menu-grid">
-                <div class="menu-item" onclick="changeScreen('bc')"><img src="https://cdn-icons-png.flaticon.com/512/2329/2329865.png"><br>Bầu Cua</div>
-                <div class="menu-item" onclick="changeScreen('tx')"><img src="https://cdn-icons-png.flaticon.com/512/3554/3554832.png"><br>Tài Xỉu</div>
-                <div class="menu-item" onclick="changeScreen('xd')"><img src="https://cdn-icons-png.flaticon.com/512/1046/1046368.png"><br>Xóc Đĩa</div>
-                <div class="menu-item" onclick="changeScreen('dn')"><img src="https://cdn-icons-png.flaticon.com/512/3462/3462140.png"><br>Đua Ngựa</div>
+                <div class="menu-item" onclick="changeScreen('bc')"><img src="https://cdn-icons-png.flaticon.com/512/2329/2329865.png" width="50"><br>Bầu Cua</div>
+                <div class="menu-item" onclick="changeScreen('tx')"><img src="https://cdn-icons-png.flaticon.com/512/3554/3554832.png" width="50"><br>Tài Xỉu</div>
+                <div class="menu-item" onclick="changeScreen('xd')"><img src="https://cdn-icons-png.flaticon.com/512/1046/1046368.png" width="50"><br>Xóc Đĩa</div>
+                <div class="menu-item" onclick="changeScreen('dn')"><img src="https://cdn-icons-png.flaticon.com/512/3462/3462140.png" width="50"><br>Đua Ngựa</div>
             </div>
         </div>
 
         <div id="screen-bc" class="hidden">
-            <button onclick="changeScreen('menu')">← Quay lại Menu</button>
+            <button onclick="changeScreen('menu')">← Menu</button>
             <div class="dice-board" id="board-bc">
                 <img id="dice-bc-0" src="https://img.icons8.com/color/144/help.png">
                 <img id="dice-bc-1" src="https://img.icons8.com/color/144/help.png">
@@ -93,34 +94,34 @@
             </div>
             <div id="bet-bc-area" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;"></div>
         </div>
-
+        
         <div id="screen-tx" class="hidden">
-            <button onclick="changeScreen('menu')">← Quay lại Menu</button>
+            <button onclick="changeScreen('menu')">← Menu</button>
             <div class="dice-board">
                 <img id="dice-tx-0" src="https://img.icons8.com/ios-filled/100/ffffff/dice-one.png">
                 <img id="dice-tx-1" src="https://img.icons8.com/ios-filled/100/ffffff/dice-one.png">
                 <img id="dice-tx-2" src="https://img.icons8.com/ios-filled/100/ffffff/dice-one.png">
             </div>
             <div style="display:flex; gap:10px;">
-                <div id="btn-tai" class="menu-item" style="flex:1" onclick="selTX('tai')"><h2>TÀI</h2><input type="number" id="val-tai" placeholder="Số xu..." onclick="event.stopPropagation()"></div>
-                <div id="btn-xiu" class="menu-item" style="flex:1" onclick="selTX('xiu')"><h2>XỈU</h2><input type="number" id="val-xiu" placeholder="Số xu..." onclick="event.stopPropagation()"></div>
+                <div id="btn-tai" class="menu-item" style="flex:1" onclick="selTX('tai')">TÀI<input type="number" id="val-tai" placeholder="Xu..." onclick="event.stopPropagation()"></div>
+                <div id="btn-xiu" class="menu-item" style="flex:1" onclick="selTX('xiu')">XỈU<input type="number" id="val-xiu" placeholder="Xu..." onclick="event.stopPropagation()"></div>
             </div>
         </div>
 
         <div id="screen-xd" class="hidden">
-            <button onclick="changeScreen('menu')">← Quay lại Menu</button>
+            <button onclick="changeScreen('menu')">← Menu</button>
             <div class="dice-board" id="board-xd" style="gap:20px;">
                 <div id="dot-0" class="xd-dot dot-white"></div><div id="dot-1" class="xd-dot dot-white"></div>
                 <div id="dot-2" class="xd-dot dot-white"></div><div id="dot-3" class="xd-dot dot-white"></div>
             </div>
             <div style="display:flex; gap:10px;">
-                <div id="btn-chan" class="menu-item" style="flex:1" onclick="selXD('chan')"><h2>CHẴN</h2><input type="number" id="val-chan" placeholder="Số xu..." onclick="event.stopPropagation()"></div>
-                <div id="btn-le" class="menu-item" style="flex:1" onclick="selXD('le')"><h2>LẺ</h2><input type="number" id="val-le" placeholder="Số xu..." onclick="event.stopPropagation()"></div>
+                <div id="btn-chan" class="menu-item" style="flex:1" onclick="selXD('chan')">CHẴN<input type="number" id="val-chan" placeholder="Xu..."></div>
+                <div id="btn-le" class="menu-item" style="flex:1" onclick="selXD('le')">LẺ<input type="number" id="val-le" placeholder="Xu..."></div>
             </div>
         </div>
 
         <div id="screen-dn" class="hidden">
-            <button onclick="changeScreen('menu')">← Quay lại Menu</button>
+            <button onclick="changeScreen('menu')">← Menu</button>
             <div class="track" style="margin:20px 0;">
                 <div class="lane"><div id="horse-0" class="horse">🏇1</div></div>
                 <div class="lane"><div id="horse-1" class="horse">🏇2</div></div>
@@ -130,200 +131,247 @@
             <div id="bet-dn-area" style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;"></div>
         </div>
 
-        <button id="play-btn" class="hidden" onclick="masterPlay()">BẮT ĐẦU PHIÊN (HOST)</button>
+        <button id="play-btn" class="hidden" onclick="masterPlay()">BẮT ĐẦU PHIÊN</button>
+        <div id="guest-msg-area" class="hidden" style="text-align:center; padding:10px; color:#aaa;">Đang đợi phiên chơi chung...</div>
     </div>
 
     <div class="side-panel">
         <div class="box">
-            <div style="padding:10px; font-weight:bold; color:var(--gold); border-bottom:1px solid #444;">🟢 ONLINE (<span id="online-count">0</span>)</div>
-            <ul id="user-list" style="list-style:none; padding:10px; margin:0; font-size:12px; max-height: 100px; overflow-y: auto;"></ul>
+            <div style="padding:10px; font-weight:bold; color:var(--gold);">📜 LỊCH SỬ CÁ NHÂN</div>
+            <div id="history-list"></div>
         </div>
         <div class="box">
+            <div style="padding:10px; font-weight:bold; color:var(--gold);">💬 CHÁT TỔNG</div>
             <div id="chat-messages"></div>
-            <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Nhắn tin...">
-                <button onclick="sendChat()">></button>
+            <div style="display:flex; padding:10px; gap:5px; background:#1a1a1a;">
+                <input type="text" id="chat-input" placeholder="Chat..." style="flex:1; padding:8px; border-radius:5px; border:none; background:#333; color:white;">
+                <button onclick="sendChat()" style="background:var(--gold); border:none; border-radius:5px; padding:0 10px; cursor:pointer;">></button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    // --- 1. FIREBASE CONFIG ---
-    const firebaseConfig = {
-  apiKey: "AIzaSyA41b97JGMfwxG8YYeS6gpNREJDdNTm1zs",
-  authDomain: "game-ddf58.firebaseapp.com",
-  databaseURL: "https://game-ddf58-default-rtdb.firebaseio.com",
-  projectId: "game-ddf58",
-  storageBucket: "game-ddf58.firebasestorage.app",
-  messagingSenderId: "1044515984576",
-  appId: "1:1044515984576:web:dfe285553142875849c925",
-  measurementId: "G-0Q7VVDPWRP"
-};
+    // --- FIREBASE CONFIG (Thay bằng của bạn) ---
+    const firebaseConfig = { apiKey: "...", authDomain: "...", databaseURL: "...", projectId: "...", storageBucket: "...", messagingSenderId: "...", appId: "..." };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth(); const db = firebase.database();
 
-    // --- 2. BIẾN TOÀN CỤC ---
-    let curScreen = 'menu'; let balance = 0; let isHost = false; let currentUser = null; let isRegisterMode = false;
+    // --- BIẾN TOÀN CỤC ---
+    let curScreen = 'menu'; let balance = 0; let isHost = false; let currentUser = null; let isRegisterMode = false; let currentMode = 'chung';
     let myBets = { bc: [0,0,0,0,0,0], tx: {type:null, val:0}, xd: {type:null, val:0}, dn: [0,0,0,0] };
     const itemsBC = [{n:'Bầu',i:'2329865'},{n:'Cua',i:'1046368'},{n:'Tôm',i:'2515183'},{n:'Cá',i:'2271313'},{n:'Gà',i:'2632839'},{n:'Nai',i:'2395796'}];
 
-    // --- 3. KHỞI TẠO GIAO DIỆN ---
+    // --- KHỞI TẠO ---
     itemsBC.forEach((item, idx) => {
-        document.getElementById('bet-bc-area').innerHTML += `<div style="background:#333; padding:10px; border-radius:10px; text-align:center;"><img src="https://cdn-icons-png.flaticon.com/512/${item.i}/${item.i}.png" style="width:40px;"><br><input type="number" id="in-bc-${idx}" style="width:80%;" placeholder="0"></div>`;
+        document.getElementById('bet-bc-area').innerHTML += `<div style="background:#333; padding:5px; border-radius:10px; text-align:center;"><img src="https://cdn-icons-png.flaticon.com/512/${item.i}/${item.i}.png" style="width:35px;"><br><input type="number" id="in-bc-${idx}" style="width:80%;" placeholder="0"></div>`;
     });
     for(let i=0; i<4; i++) {
         document.getElementById('bet-dn-area').innerHTML += `<div style="background:#333; padding:10px; border-radius:10px; text-align:center;">🏇${i+1}<br><input type="number" id="in-dn-${i}" style="width:80%;" placeholder="0"></div>`;
     }
 
-    // --- 4. AUTH LOGIC ---
+    // --- AUTH ---
     function toggleAuthMode() {
         isRegisterMode = !isRegisterMode;
         document.getElementById('auth-title').innerText = isRegisterMode ? "ĐĂNG KÝ" : "ĐĂNG NHẬP";
-        document.getElementById('auth-btn').innerText = isRegisterMode ? "Tạo Tài Khoản" : "Vào Game";
         document.getElementById('auth-display-name').classList.toggle('hidden', !isRegisterMode);
     }
-
     function handleAuth() {
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-        const displayName = document.getElementById('auth-display-name').value;
-        if(isRegisterMode) {
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(u => u.user.updateProfile({displayName: displayName}))
-                .then(() => location.reload()).catch(e => alert(e.message));
-        } else {
-            auth.signInWithEmailAndPassword(email, password).catch(e => alert(e.message));
-        }
+        const e = document.getElementById('auth-email').value, p = document.getElementById('auth-password').value, n = document.getElementById('auth-display-name').value;
+        if(isRegisterMode) auth.createUserWithEmailAndPassword(e, p).then(u => u.user.updateProfile({displayName: n})).then(() => location.reload()).catch(err => alert(err.message));
+        else auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
     }
-
     function forgotPassword() {
-        const email = document.getElementById('auth-email').value;
-        if(!email) return alert("Vui lòng nhập email!");
-        auth.sendPasswordResetEmail(email).then(() => alert("Đã gửi email khôi phục!")).catch(e => alert(e.message));
+        const e = document.getElementById('auth-email').value;
+        if(!e) return alert("Nhập email!");
+        auth.sendPasswordResetEmail(e).then(() => alert("Đã gửi email khôi phục!")).catch(err => alert(err.message));
     }
+    function logout() { auth.signOut().then(() => location.reload()); }
 
     auth.onAuthStateChanged(user => {
         if(user) {
             currentUser = user; document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('game-ui').classList.remove('hidden');
             document.getElementById('user-name').innerText = user.displayName || user.email.split('@')[0];
-            db.ref('online/'+user.uid).set({name: user.displayName || user.email, time: firebase.database.ServerValue.TIMESTAMP});
-            db.ref('online/'+user.uid).onDisconnect().remove();
             db.ref('users/'+user.uid).on('value', s => { 
                 balance = s.val()?.bal || 2000; 
                 if(!s.val()) db.ref('users/'+user.uid).set({bal: 2000});
                 document.getElementById('balance').innerText = balance.toLocaleString(); 
             });
+            // Lắng nghe lịch sử
+            db.ref('history/' + user.uid).limitToLast(15).on('value', s => {
+                const list = document.getElementById('history-list'); list.innerHTML = "";
+                let arr = []; s.forEach(c => arr.unshift(c.val()));
+                arr.forEach(i => {
+                    const cls = i.amount > 0 ? "history-win" : "history-lose";
+                    list.innerHTML += `<div class="history-item"><span>[${i.time}] ${i.game}</span><b class="${cls}">${i.amount > 0 ? '+':''}${i.amount}</b></div>`;
+                });
+            });
+            // Online Status
+            db.ref('online/'+user.uid).set({name: user.displayName || user.email, time: firebase.database.ServerValue.TIMESTAMP});
+            db.ref('online/'+user.uid).onDisconnect().remove();
         }
     });
 
-    function logout() { auth.signOut().then(() => location.reload()); }
-
-    // --- 5. SOCIAL LOGIC ---
-    db.ref('online').orderByChild('time').on('value', s => {
-        const list = document.getElementById('user-list'); list.innerHTML = ""; let users = [];
-        s.forEach(c => { users.push(c.key); list.innerHTML += `<li>${c.val().name}</li>`; });
-        document.getElementById('online-count').innerText = users.length;
-        isHost = (users[0] === currentUser?.uid);
-        document.getElementById('play-btn').classList.toggle('hidden', !isHost);
-    });
-
-    function sendChat() {
-        const inp = document.getElementById('chat-input');
-        if(!inp.value.trim()) return;
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        db.ref('chat').push({n:currentUser.displayName || currentUser.email, t:inp.value, time: time});
-        inp.value = "";
+    // --- GAME MODES ---
+    function toggleMode() {
+        currentMode = document.getElementById('game-mode').value;
+        if(currentMode === 'rieng') { document.getElementById('play-btn').classList.remove('hidden'); document.getElementById('guest-msg-area').classList.add('hidden'); }
+        else syncOnlineHost();
     }
-    document.getElementById('chat-input').addEventListener('keypress', e => { if(e.key === 'Enter') sendChat(); });
-    db.ref('chat').limitToLast(15).on('value', s => {
-        const m = document.getElementById('chat-messages'); m.innerHTML = "";
-        s.forEach(c => { m.innerHTML += `<div style="margin-bottom:5px;"><span class="chat-time">[${c.val().time}]</span><b>${c.val().n}:</b> ${c.val().t}</div>`; });
-        m.scrollTop = m.scrollHeight;
-    });
 
-    // --- 6. GAME CORE ---
+    function syncOnlineHost() {
+        db.ref('online').orderByChild('time').on('value', s => {
+            let users = []; s.forEach(c => users.push(c.key));
+            isHost = (users[0] === currentUser?.uid);
+            if(currentMode === 'chung') {
+                document.getElementById('play-btn').classList.toggle('hidden', !isHost);
+                document.getElementById('guest-msg-area').classList.toggle('hidden', isHost);
+            }
+            document.getElementById('online-count').innerText = users.length;
+        });
+    }
+    syncOnlineHost();
+
+    // --- MASTER PLAY ---
+    function masterPlay() {
+        let t = calculateTotalBet();
+        if(t > balance) return alert("Không đủ xu!");
+        if(t === 0) return alert("Vui lòng đặt cược!");
+
+        if(currentMode === 'rieng') { deduct(curScreen); localShake(); }
+        else {
+            if(!isHost) return;
+            deduct(curScreen);
+            const room = 'room_'+curScreen;
+            db.ref(room).update({status:'shaking', sessionId: firebase.database.ServerValue.increment(1)});
+            setTimeout(() => {
+                let res = generateRes(curScreen);
+                db.ref(room).update({status:'ready', res: res, time: Date.now()});
+            }, 1500);
+        }
+    }
+
+    function generateRes(g) {
+        if(g==='bc') return [rand(6), rand(6), rand(6)];
+        if(g==='tx') return [rand(6)+1, rand(6)+1, rand(6)+1];
+        if(g==='xd') return [Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5];
+        return [];
+    }
+
+    function localShake() {
+        const msg = document.getElementById('msg'); msg.innerText = "Đang xóc...";
+        if(curScreen === 'dn') { startLocalRace(); return; }
+        shakeDice(true);
+        setTimeout(() => {
+            shakeDice(false);
+            let res = generateRes(curScreen);
+            updateVisuals(curScreen, res);
+            calcWin(curScreen, {res: res});
+        }, 1500);
+    }
+
+    function shakeDice(on) {
+        const imgs = document.querySelectorAll('#screen-'+curScreen+' img');
+        imgs.forEach(i => i.classList.toggle('shaking', on));
+    }
+
+    // --- UTILS ---
+    function rand(n) { return Math.floor(Math.random()*n); }
     function changeScreen(s) {
         ['menu','bc','tx','xd','dn'].forEach(x => document.getElementById('screen-'+x).classList.add('hidden'));
         document.getElementById('screen-'+s).classList.remove('hidden');
         curScreen = s; document.getElementById('msg').innerText = "";
+        toggleMode();
     }
 
-    function masterPlay() {
-        if(!isHost) return;
-        const room = 'room_'+curScreen; let res = [];
-        db.ref(room+'/sessionId').transaction(c => (c||0)+1);
-        
-        if(curScreen === 'bc') res = [rand(6), rand(6), rand(6)];
-        if(curScreen === 'tx') res = [rand(6)+1, rand(6)+1, rand(6)+1];
-        if(curScreen === 'xd') res = [Math.random()>0.5, Math.random()>0.5, Math.random()>0.5, Math.random()>0.5];
-        if(curScreen === 'dn') { startRace(); return; }
-
-        db.ref(room).update({status:'shaking'});
-        setTimeout(() => db.ref(room).update({status:'ready', res: res, time: Date.now()}), 1500);
-    }
-
-    function startRace() {
-        let pos = [0,0,0,0]; 
-        let timer = setInterval(() => {
-            pos = pos.map(p => p + Math.floor(Math.random()*10));
-            if(pos.some(p => p>=90)) {
-                clearInterval(timer); let win = pos.indexOf(Math.max(...pos));
-                db.ref('room_dn').update({status:'ready', res: pos, win: win, time: Date.now()});
-            } else { db.ref('room_dn').update({status:'shaking', res: pos}); }
-        }, 300);
-    }
-
-    function syncGame(g, data) {
-        if(!data || curScreen !== g) return;
-        document.getElementById('session-id').innerText = data.sessionId || 0;
-        if(data.status === 'shaking') {
-            if(!isHost) deduct(g);
-            if(g==='bc') [0,1,2].forEach(i => document.getElementById('dice-bc-'+i).classList.add('shaking'));
-            if(g==='dn') data.res.forEach((p,i) => document.getElementById('horse-'+i).style.left = p+'%');
-        } else if(data.status === 'ready') {
-            if(g==='bc') data.res.forEach((v,i) => { const el = document.getElementById('dice-bc-'+i); el.classList.remove('shaking'); el.src = `https://cdn-icons-png.flaticon.com/512/${itemsBC[v].i}/${itemsBC[v].i}.png`; });
-            if(g==='tx') data.res.forEach((v,i) => { document.getElementById('dice-tx-'+i).src = `https://img.icons8.com/ios-filled/100/ffffff/dice-${['one','two','three','four','five','six'][v-1]}.png`; });
-            if(g==='xd') data.res.forEach((v,i) => { const el = document.getElementById('dot-'+i); el.className = v ? 'xd-dot dot-red' : 'xd-dot dot-white'; });
-            if(g==='dn') data.res.forEach((p,i) => document.getElementById('horse-'+i).style.left = p+'%');
-            calcWin(g, data);
-        }
+    function calculateTotalBet() {
+        let t = 0;
+        if(curScreen==='bc') for(let i=0;i<6;i++) t += parseInt(document.getElementById('in-bc-'+i).value)||0;
+        if(curScreen==='tx') t = parseInt(document.getElementById('val-'+myBets.tx.type)?.value)||0;
+        if(curScreen==='xd') t = parseInt(document.getElementById('val-'+myBets.xd.type)?.value)||0;
+        if(curScreen==='dn') for(let i=0;i<4;i++) t += parseInt(document.getElementById('in-dn-'+i).value)||0;
+        return t;
     }
 
     function deduct(g) {
-        let t = 0;
-        if(g==='bc') for(let i=0;i<6;i++) { myBets.bc[i] = parseInt(document.getElementById('in-bc-'+i).value)||0; t+=myBets.bc[i]; }
-        if(g==='tx') { const ty = myBets.tx.type; if(ty) { myBets.tx.val = parseInt(document.getElementById('val-'+ty).value)||0; t=myBets.tx.val; } }
-        if(g==='xd') { const ty = myBets.xd.type; if(ty) { myBets.xd.val = parseInt(document.getElementById('val-'+ty).value)||0; t=myBets.xd.val; } }
-        if(g==='dn') for(let i=0;i<4;i++) { myBets.dn[i] = parseInt(document.getElementById('in-dn-'+i).value)||0; t+=myBets.dn[i]; }
-        if(t > 0 && t <= balance) db.ref('users/'+currentUser.uid).update({bal: balance - t});
+        let t = calculateTotalBet();
+        if(t > 0) {
+            if(g==='bc') for(let i=0;i<6;i++) myBets.bc[i] = parseInt(document.getElementById('in-bc-'+i).value)||0;
+            if(g==='tx') myBets.tx.val = t;
+            if(g==='xd') myBets.xd.val = t;
+            if(g==='dn') for(let i=0;i<4;i++) myBets.dn[i] = parseInt(document.getElementById('in-dn-'+i).value)||0;
+            
+            db.ref('users/'+currentUser.uid).update({bal: balance - t});
+            saveHistory(g, -t, false);
+        }
+    }
+
+    function saveHistory(g, a, win) {
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        db.ref('history/'+currentUser.uid).push({game: g.toUpperCase(), amount: a, time: time, win: win});
     }
 
     function calcWin(g, data) {
         let w = 0;
         if(g==='bc') data.res.forEach(v => { if(myBets.bc[v]>0) w += myBets.bc[v]*2; });
-        if(g==='tx') { const s = data.res.reduce((a,b)=>a+b,0); const r = s>=11?'tai':'xiu'; if(myBets.tx.type === r) w = myBets.tx.val*2; }
-        if(g==='xd') { const r = data.res.filter(x=>x).length % 2 === 0 ? 'chan' : 'le'; if(myBets.xd.type === r) w = myBets.xd.val*2; }
+        if(g==='tx') { const s = data.res.reduce((a,b)=>a+b,0), r = s>=11?'tai':'xiu'; if(myBets.tx.type === r) w = myBets.tx.val*2; }
+        if(g==='xd') { const r = data.res.filter(x=>x).length % 2 === 0 ? 'chan':'le'; if(myBets.xd.type === r) w = myBets.xd.val*2; }
         if(g==='dn') { if(myBets.dn[data.win]>0) w = myBets.dn[data.win]*4; }
-        if(w>0) { db.ref('users/'+currentUser.uid).update({bal: balance + w}); document.getElementById('msg').innerText = "THẮNG +"+w; }
+        
+        if(w > 0) {
+            db.ref('users/'+currentUser.uid).update({bal: balance + w});
+            document.getElementById('msg').innerText = "THẮNG +"+w;
+            saveHistory(g, w, true);
+        } else if(calculateTotalBet() > 0) {
+            document.getElementById('msg').innerText = "THUA CUỘC!";
+        }
         resetBets();
     }
 
     function resetBets() {
         myBets = { bc: [0,0,0,0,0,0], tx: {type:null, val:0}, xd: {type:null, val:0}, dn: [0,0,0,0] };
         document.querySelectorAll('input').forEach(i => i.value = "");
-        document.querySelectorAll('.active-bet').forEach(e => e.classList.remove('active-bet'));
     }
 
-    function selTX(t) { myBets.tx.type = t; document.getElementById('btn-tai').classList.remove('active-bet'); document.getElementById('btn-xiu').classList.remove('active-bet'); document.getElementById('btn-'+t).classList.add('active-bet'); }
-    function selXD(t) { myBets.xd.type = t; document.getElementById('btn-chan').classList.remove('active-bet'); document.getElementById('btn-le').classList.remove('active-bet'); document.getElementById('btn-'+t).classList.add('active-bet'); }
-    function rand(n) { return Math.floor(Math.random()*n); }
+    function updateVisuals(g, res) {
+        if(g==='bc') res.forEach((v,i) => document.getElementById('dice-bc-'+i).src = `https://cdn-icons-png.flaticon.com/512/${itemsBC[v].i}/${itemsBC[v].i}.png`);
+        if(g==='tx') res.forEach((v,i) => document.getElementById('dice-tx-'+i).src = `https://img.icons8.com/ios-filled/100/ffffff/dice-${['one','two','three','four','five','six'][v-1]}.png`);
+        if(g==='xd') res.forEach((v,i) => document.getElementById('dot-'+i).className = v ? 'xd-dot dot-red' : 'xd-dot dot-white');
+    }
 
-    db.ref('room_bc').on('value', s => syncGame('bc', s.val()));
-    db.ref('room_tx').on('value', s => syncGame('tx', s.val()));
-    db.ref('room_xd').on('value', s => syncGame('xd', s.val()));
-    db.ref('room_dn').on('value', s => syncGame('dn', s.val()));
+    // --- SYNC ---
+    db.ref('room_bc').on('value', s => sync('bc', s.val()));
+    db.ref('room_tx').on('value', s => sync('tx', s.val()));
+    db.ref('room_xd').on('value', s => sync('xd', s.val()));
+    db.ref('room_dn').on('value', s => sync('dn', s.val()));
+
+    function sync(g, data) {
+        if(!data || curScreen !== g || currentMode === 'rieng') return;
+        if(data.status === 'shaking') {
+            if(!isHost) deduct(g);
+            shakeDice(true);
+            if(g==='dn') data.res.forEach((p,i) => document.getElementById('horse-'+i).style.left = p+'%');
+        } else if(data.status === 'ready') {
+            shakeDice(false);
+            updateVisuals(g, data.res);
+            if(g==='dn') data.res.forEach((p,i) => document.getElementById('horse-'+i).style.left = p+'%');
+            calcWin(g, data);
+        }
+    }
+
+    // --- CHAT ---
+    function sendChat() {
+        const i = document.getElementById('chat-input');
+        if(i.value) { db.ref('chat').push({n:currentUser.displayName, t:i.value, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}); i.value=""; }
+    }
+    db.ref('chat').limitToLast(10).on('value', s => {
+        const m = document.getElementById('chat-messages'); m.innerHTML = "";
+        s.forEach(c => { m.innerHTML += `<div><span class="chat-time">[${c.val().time}]</span><b>${c.val().n}:</b> ${c.val().t}</div>`; });
+        m.scrollTop = m.scrollHeight;
+    });
+
+    function selTX(t) { myBets.tx.type = t; document.querySelectorAll('#screen-tx .menu-item').forEach(e => e.classList.remove('active-bet')); document.getElementById('btn-'+t).classList.add('active-bet'); }
+    function selXD(t) { myBets.xd.type = t; document.querySelectorAll('#screen-xd .menu-item').forEach(e => e.classList.remove('active-bet')); document.getElementById('btn-'+t).classList.add('active-bet'); }
 </script>
 </body>
 </html>
-
